@@ -38,13 +38,13 @@ async def chiste(ctx):
     await ctx.send(file = a)
     
 @bot.command(name = "momo")
-async def chiste(ctx):
+async def chistes(ctx):
     a = l.momo()
     await ctx.send(file = a)
 
 @bot.command(name = "pato")
 async def patos(ctx):
-    a = ca.get_duck_image_url()
+    a = ca.duck_image()
     await ctx.send(a)
 
 bot.run(token)
