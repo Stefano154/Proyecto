@@ -1,4 +1,4 @@
-import discord, os, audioop, logic as l, random as r, commandapi as ca
+import discord, os, audioop, logic as l, random as r, commandapi as ca, ambiente as amb
 from dotenv import load_dotenv
 from logic import *
 from discord.ext import commands
@@ -47,4 +47,15 @@ async def patos(ctx):
     a = ca.duck_image()
     await ctx.send(a)
 
+@bot.command(name="eco")
+async def ecologia(ctx, opc:int):
+    if opc == 1:
+        await ctx.send(embed=amb.solucion_suelo1())
+    elif opc == 2:
+        await ctx.send(embed=amb.solucion_suelo2())
+    elif opc == 3:
+        await ctx.send(embed=amb.solucion_suelo3())
+    else:
+        await ctx.send("esta opcion no existe")
+    
 bot.run(token)
