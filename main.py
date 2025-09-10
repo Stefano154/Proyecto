@@ -2,13 +2,15 @@ import discord, os, audioop, logic as l, random as r, commandapi as ca, ambiente
 from dotenv import load_dotenv
 from logic import *
 from discord.ext import commands
-import commandapi as api
+from voice_manager import join_voice, leave_voice, start_voice_listener
+import commandapi as api, pyttsx3
 
 load_dotenv ()
 token = os.getenv("dt")
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.voice_states = True
 bot = commands.Bot(command_prefix='$', intents=intents)
 
 @bot.event
@@ -74,13 +76,38 @@ async def fact(ctx):
     await ctx.send(f"💡 Dato curioso: {dato}")
     api.speak(dato)
 
-@bot.command(name='voz')
-async def voz(ctx, genero: str):
-    """Cambia la voz del bot (masculino o femenino)."""
-    global voz_actual
-    voz_actual = genero
-    configurar_voz(genero)
-    await ctx.send(f"✅ Voz cambiada a: {genero}")
-    api.speak(f"Ahora estoy usando una voz {genero}")
+engine = pyttsx3.init()
+
+def configurar_voz(genero: str):
+    voces = engine.getProperty("voices")
+    if genero.lower() == "masculino":
+        engine.setProperty("voice", voces[0].id)
+    elif genero.lower() == "femenino":
+        engine.setProperty("voice", voces[1].id)
+    else:
+        raise ValueError("Género no válido. Usa 'masculino' o 'femenino'.")
+
+def speak(texto: str):
+    engine.say(texto)
+    engine.runAndWait()
+
+# 🔊 Unirse al canal de voz
+@bot.command()
+async def join(ctx):
+    await join_voice(ctx)
+    await start_voice_listener(ctx)
+
+# 👋 Salir del canal de voz
+@bot.command()
+async def leave(ctx):
+    await leave_voice(ctx)
+
+# 📡 Estado de conexión
+@bot.command()
+async def status(ctx):
+    if ctx.voice_client and ctx.voice_client.is_connected():
+        await ctx.send(f"✅ Estoy conectado al canal de voz: **{ctx.voice_client.channel}**")
+    else:
+        await ctx.send("❌ No estoy conectado a ningún canal de voz.")
 
 bot.run(token)
