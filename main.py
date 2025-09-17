@@ -4,6 +4,10 @@ from logic import *
 from discord.ext import commands
 from voice_manager import join_voice, leave_voice, start_voice_listener
 import commandapi as api, pyttsx3
+import datetime
+import requests
+import yt_dlp
+import pyttsx3
 
 load_dotenv ()
 token = os.getenv("dt")
@@ -72,9 +76,9 @@ async def clima(ctx, ciudad: str):
 
 @bot.command(name='fact')
 async def fact(ctx):
-    dato = api.obtener_dato_curioso()
-    await ctx.send(f"💡 Dato curioso: {dato}")
-    api.speak(dato)
+    dato_fact = api.obtener_dato_curioso()
+    await ctx.send(f"💡 Dato curioso: {dato_fact}")
+    api.speak(dato_fact)
 
 engine = pyttsx3.init()
 
@@ -109,5 +113,38 @@ async def status(ctx):
         await ctx.send(f"✅ Estoy conectado al canal de voz: **{ctx.voice_client.channel}**")
     else:
         await ctx.send("❌ No estoy conectado a ningún canal de voz.")
+
+@bot.command(name="huella")
+async def huella(ctx, km: float):
+    """
+    Calcula la huella de carbono de un recorrido en auto.
+    Uso: !huella <kilómetros>
+    """
+    # Factor promedio: 0.233 kg CO2/km (auto promedio)
+    co2 = km * 0.233
+    await ctx.send(f"🚗 Tu recorrido generó aprox. **{co2:.2f} kg de CO₂**.\n🌱 ¡Considera usar bicicleta o transporte público!")
+
+eco_quiz_questions = [
+    {
+        "pregunta": "¿Cuál es el gas principal responsable del efecto invernadero?",
+        "opciones": ["A) CO₂", "B) N₂", "C) O₂"],
+        "respuesta": "A"
+    },
+    {
+        "pregunta": "¿Cuánto tarda en degradarse una botella de plástico?",
+        "opciones": ["A) 50 años", "B) 450 años", "C) 10 años"],
+        "respuesta": "B"
+    }
+]
+
+@bot.command(name="eco_quiz")
+async def eco_quiz(ctx):
+    """
+    Envía una pregunta de trivia ambiental.
+    Uso: !eco_quiz
+    """
+    q = r.choice(eco_quiz_questions)
+    opciones = "\n".join(q["opciones"])
+    await ctx.send(f"🌍 **{q['pregunta']}**\n{opciones}\n✍️ Responde con A, B o C.")
 
 bot.run(token)

@@ -1,18 +1,64 @@
+import os
+import aiohttp
+import asyncio
 import requests
 import yt_dlp
 import pyttsx3
 import discord
+from utils import consejo_del_dia
+from api import obtener_dato_curioso 
+from api import consultar_clima
 
 engine = pyttsx3.init()
+
+async def buscar_google_cse(query: str) -> str:
+    """
+    Usa Google Custom Search (CSE) para obtener hasta 3 resultados.
+    Requiere configurar GOOGLE_API_KEY y GOOGLE_CX en el .env.
+    Devuelve un texto formateado listo para enviar en Discord.
+    """
+    api_key = os.getenv("GOOGLE_API_KEY")
+    cx = os.getenv("GOOGLE_CX")
+    if not api_key or not cx:
+        return "❌ Faltan GOOGLE_API_KEY o GOOGLE_CX en .env"
+
+    url = "https://www.googleapis.com/customsearch/v1"
+    params = {"key": api_key, "cx": cx, "q": query, "num": 3}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params, timeout=10) as resp:
+                if resp.status != 200:
+                    text = await resp.text()
+                    return f"❌ Error al consultar Google CSE: {resp.status}\n{text[:300]}"
+                data = await resp.json()
+    except asyncio.TimeoutError:
+        return "❌ Tiempo de espera agotado al consultar Google."
+    except Exception as e:
+        return f"❌ Error al consultar Google: {e}"
+
+    items = data.get("items", [])
+    if not items:
+        return "🔍 No se encontraron resultados."
+
+    lines = [f"🔍 Resultados para: **{query}**\n"]
+    for it in items:
+        title = it.get("title", "Sin título")
+        snippet = it.get("snippet", "").replace("\n", " ")
+        link = it.get("link", "")
+        lines.append(f"- {title}\n  {snippet}\n  {link}\n")
+    return "\n".join(lines)
+
 
 async def ejecutar_comando(ctx, texto):
     texto = texto.lower()  # normalizamos todo a minúsculas
 
-    # 🌱 ECO TIP
+  # 🌱 ECO TIP
     if any(frase in texto for frase in [
         "eco tip", "dame un eco tip", "consejo ecológico", "un tip ecológico"
     ]):
-        consejo = "🌱 Consejo: Usa botellas reutilizables para reducir el plástico de un solo uso."
+        consejoeco = consejo_del_dia()  # aquí llamas la función
+        consejo = f"🌱 Consejo ecológico del día:\n{consejoeco}"
         await ctx.send(consejo)
         engine.say(consejo)
         engine.runAndWait()
@@ -30,7 +76,8 @@ async def ejecutar_comando(ctx, texto):
     elif any(frase in texto for frase in [
         "dato curioso", "cuéntame un dato", "sorpréndeme"
     ]):
-        dato = "💡 ¿Sabías que los océanos producen más del 50% del oxígeno que respiramos?"
+        dato_fact = obtener_dato_curioso()
+        dato = f"💡 Dato curioso: {dato_fact}"
         await ctx.send(dato)
         engine.say(dato)
         engine.runAndWait()
@@ -39,9 +86,10 @@ async def ejecutar_comando(ctx, texto):
     elif any(frase in texto for frase in [
         "clima", "qué tiempo hace", "cómo está el clima"
     ]):
+        info_clima = consultar_clima
         ciudad = texto.replace("clima", "").replace("qué tiempo hace en", "").strip()
         if ciudad:
-            info = f"El clima en {ciudad} es soleado con 24°C."  # Aquí puedes llamar a tu API real
+            info = f"El clima en {ciudad} es: {info_clima}"  # Aquí puedes llamar a tu API real
             await ctx.send(info)
             engine.say(info)
             engine.runAndWait()
@@ -87,9 +135,11 @@ async def ejecutar_comando(ctx, texto):
         if not query:
             await ctx.send("❌ Debes decir qué buscar en Google.")
             return
-        await ctx.send(f"🔍 Resultados de búsqueda de: {query}\n(Implementar scraping/API aquí)")
+        resultado = await buscar_google_cse(query)
+        await ctx.send(resultado)
         engine.say(f"Mostrando resultados para {query}")
         engine.runAndWait()
+
 
     # 🗑️ RECICLAJE
     elif "reciclar" in texto:
@@ -125,4 +175,6 @@ async def ejecutar_comando(ctx, texto):
         await ctx.send(f"❌ Comando no reconocido: {texto}")
         engine.say("Comando no reconocido.")
         engine.runAndWait()
+
+
 
