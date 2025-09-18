@@ -166,7 +166,7 @@ async def eco_quiz(ctx):
         return m.author == ctx.author and m.channel == ctx.channel and m.content.upper() in ["A", "B", "C"]
 
     try:
-        respuesta = await bot.wait_for("message", check=check, timeout=20.0)
+        respuesta = await bot.wait_for("message", check=check, timeout=10.0)
     except Exception:
         await ctx.send("⏰ Se acabó el tiempo para responder.")
         return
