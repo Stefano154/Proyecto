@@ -147,4 +147,33 @@ async def eco_quiz(ctx):
     opciones = "\n".join(q["opciones"])
     await ctx.send(f"🌍 **{q['pregunta']}**\n{opciones}\n✍️ Responde con A, B o C.")
 
+@bot.command(name="comandos")
+async def comandos(ctx):
+    """
+    Muestra la lista de comandos disponibles del bot en un embed.
+    Uso: $comandos
+    """
+    embed = discord.Embed(title="📜 Comandos disponibles", description="Prefijo: `$`", color=0x5865F2)
+
+
+    comandos = sorted(bot.commands, key=lambda c: c.name)
+
+
+    for cmd in comandos:
+        if getattr(cmd, 'hidden', False):
+            continue
+        nombre = f"${cmd.name}"
+        descripcion = cmd.help or "Sin descripción disponible."
+        embed.add_field(name=nombre, value=descripcion, inline=False)
+
+
+    embed.set_footer(text=f"{len([c for c in comandos if not getattr(c,'hidden',False)])} comandos listados")
+    await ctx.send(embed=embed)
+
+
+@bot.command(name="ayuda")
+async def ayuda(ctx):
+    """Alias en español para $comandos."""
+    await comandos(ctx)
+
 bot.run(token)
