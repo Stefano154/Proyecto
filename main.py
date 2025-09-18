@@ -137,15 +137,44 @@ eco_quiz_questions = [
     }
 ]
 
+# Ejemplo de preguntas
+eco_quiz_questions = [
+    {
+        "pregunta": "¿Cuál de estos materiales es 100% reciclable?",
+        "opciones": ["A) Vidrio", "B) Plástico", "C) Papel"],
+        "respuesta": "A"
+    },
+    {
+        "pregunta": "¿Cuál es la capa de la atmósfera que protege de la radiación UV?",
+        "opciones": ["A) Troposfera", "B) Estratosfera", "C) Ionosfera"],
+        "respuesta": "B"
+    }
+]
+
 @bot.command(name="eco_quiz")
 async def eco_quiz(ctx):
     """
     Envía una pregunta de trivia ambiental.
-    Uso: !eco_quiz
+    Uso: $eco_quiz
     """
     q = r.choice(eco_quiz_questions)
     opciones = "\n".join(q["opciones"])
     await ctx.send(f"🌍 **{q['pregunta']}**\n{opciones}\n✍️ Responde con A, B o C.")
+
+    def check(m):
+        # Asegura que solo se tome la respuesta del mismo usuario y en el mismo canal
+        return m.author == ctx.author and m.channel == ctx.channel and m.content.upper() in ["A", "B", "C"]
+
+    try:
+        respuesta = await bot.wait_for("message", check=check, timeout=20.0)
+    except Exception:
+        await ctx.send("⏰ Se acabó el tiempo para responder.")
+        return
+
+    if respuesta.content.upper() == q["respuesta"]:
+        await ctx.send("✅ ¡Correcto!")
+    else:
+        await ctx.send(f"❌ Incorrecto. La respuesta correcta era **{q['respuesta']}**.")
 
 @bot.command(name="comandos")
 async def comandos(ctx):
